@@ -1,1 +1,1 @@
-from mod include *
+from .mod import *

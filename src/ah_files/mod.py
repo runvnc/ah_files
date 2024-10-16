@@ -1,8 +1,37 @@
-from .make_file_backup import backup_file
-from ..commands import command
+from .make_file_backup import backup_file, restore_file
+from lib.providers.commands import command
 import os
-from .backup_file import restore_file
 import glob
+
+def check_path(fname):
+    dirname = os.path.dirname(fname)
+    if not dirname or dirname == '':
+        raise Exception("Absolute path to file must be specified")
+    return dirname
+
+@command()
+async def append(fname, text, context=None):
+    """Append text to a file. If the file doesn't exist, it will be created.
+
+       Don't try to output too much text at once.
+       Instead, append a portion at a time, waiting for the system to acknowledge 
+       each command.
+
+    fname must be the absolute path to the file
+
+    Example:
+    { "append": { "fname": "/path/to/file1.txt", "text": "This is the text to append to the file.\nLine 2." } }
+    """
+    dirname = os.path.dirname(fname)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    
+    with open(fname, 'a') as f:
+        f.write(text)
+    
+    print(f'Appended text to {fname}')
+    return True
+
 
 @command()
 async def write(fname="", text="", context=None):
@@ -62,59 +91,76 @@ async def read(fname="", context=None):
         print(f'Read text from {fname}: {text}')
         return text
 
+
 @command()
-async def replace_inclusive(fname=None, starts_with=None, ends_with=None, text=None, context=None):
-    """Replace text between two strings in a file including start and end strings.
+async def replace_inclusive(fname, starts_with, ends_with, text, context=None):
+    """Replace text between two unique strings in a file, including start and end strings.
 
     Parameters:
 
-    fname - The file to replace text in.
-    starts_with - The JSON-encoded/safe start string.
-    ends_with - The JSON-encoded/safe end string.
+    fname - The absolute path to the file to replace text in.
+    starts_with - The JSON-encoded/safe start string. Must be unique in the file.
+    ends_with - The JSON-encoded/safe end string. Must be unique in the file and appear after starts_with.
     text - The JSON-encoded/safe text to replace existing content with, including start and end strings.
 
-    Important: remember that since this is JSON, strings must be properly escaped, such as double quotes, etc.
+    Important:
+    - Strings must be properly escaped as this is a JSON command (e.g., escape newlines, double quotes).
+    - The 'starts_with' and 'ends_with' strings MUST be unique in the file to avoid ambiguity.
+    - 'starts_with' must appear before 'ends_with' in the file.
+    - The new 'text' must include both 'starts_with' and 'ends_with' to maintain file structure.
+
+    Returns:
+    Boolean indicating success.
+
+    Raises:
+    Exception: If starts_with or ends_with is not found, not unique, or in wrong order.
 
     Example:
 
-    { "replace_inclusive": { "fname": "/path/to/somefile.ext", "starts_with": "start of it",
-      "ends_with": "end of it", "text": "start of it\\nnew text\\nend of it" } }
-
-
-    Example:
-    
-    { "replace_inclusive": { "fname": "example.py", "starts_with": "def hello():\\n", 
-      "ends_with": "\\n    return 'hi'", "text": "def hello():\\n    print('hi in console')\\n    return 'hello'"}}
-
+    { "replace_inclusive": { 
+        "fname": "/path/to/example.py", 
+        "starts_with": "def unique_function():\n", 
+        "ends_with": "\n    return 'unique string'", 
+        "text": "def unique_function():\n    print('This is a unique function')\n    return 'unique string'"
+    } }
     """
-    if 'current_dir' in context.data:
-        if fname.startswith('/') or fname.startswith('./') or fname.startswith('../'):
-            fname = fname + ''
-        else:
-            if 'current_dir' in context.data:
-                fname = context.data['current_dir'] + '/' + fname
- 
-    backup_file(fname)
+
+    # Read file content
     with open(fname, 'r') as f:
         content = f.read()
-    print(f"read from file at {fname}")
-    print("file contents:")
-    print(content)
+
+    # Find the section to replace
     start_index = content.find(starts_with)
+    if start_index == -1:
+        raise Exception(f"Could not find starts_with string: {starts_with}")
+
     end_index = content.find(ends_with, start_index)
-    if start_index != -1 and end_index != -1:
-        end_index += len(ends_with)
-        new_content = content[:start_index] + text + content[end_index:]
-        with open(fname, 'w') as f:
-            f.write(new_content)
-        print(f'Replaced text between {starts_with} and {ends_with} in {fname}')
-    else:
-        if start_index == -1:
-            raise Exception("Could not find starts_with")
-        if end_index == -1:
-            raise Exception("Could not find ends_with")
+    if end_index == -1:
+        raise Exception(f"Could not find ends_with string: {ends_with}")
+
+    # Check for multiple occurrences
+    if content.count(starts_with) > 1 or content.count(ends_with) > 1:
+        raise Exception("Multiple matches found for starts_with or ends_with. Please use more specific strings.")
+
+    # Ensure starts_with comes before ends_with
+    if start_index > end_index:
+        raise Exception("'starts_with' must appear before 'ends_with' in the file")
+
+    end_index += len(ends_with)
+    new_content = content[:start_index] + text + content[end_index:]
+
+    # Backup the original file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_fname = f"{fname}.{timestamp}.bak"
+    shutil.copy2(fname, backup_fname)
+
+    # Write the new content
+    with open(fname, 'w') as f:
+        f.write(new_content)
 
     return True
+
+
 
 @command()
 async def dir(directory='', context=None):
