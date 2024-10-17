@@ -1,7 +1,6 @@
-from .backup_file import backup_file
+from .make_file_backup import backup_file, restore_file
 from lib.providers.commands import command
 import os
-from .backup_file import restore_file
 import glob
 import json
 from datetime import datetime
