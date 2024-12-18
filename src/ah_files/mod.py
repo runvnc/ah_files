@@ -5,6 +5,8 @@ import glob
 import json
 from datetime import datetime
 import shutil
+from .numbered import numbered_file_to_string, replace_lines_impl
+
 
 def check_path(fname):
     dirname = os.path.dirname(fname)
@@ -23,7 +25,13 @@ async def append(fname, text, context=None):
     fname must be the absolute path to the file
 
     Example:
-    { "append": { "fname": "/path/to/file1.txt", "text": "This is the text to append to the file.\nLine 2." } }
+
+    { "append": { "fname": "/path/to/file1.txt",
+                 "text": START_RAW
+    This is the text to be appended to the file.
+    Line 2.
+    END_RAW
+    } }
     """
     dirname = os.path.dirname(fname)
     if not os.path.exists(dirname):
@@ -46,11 +54,19 @@ async def write(fname, text, context=None):
 
     fname MUST be the absolute path to the file.
 
-    Example:
-    { "write": { "fname": "/path/to/file1.txt", "text": "This is the text to write to the file.\nLine 2." } }
+    Use the RAW string block encoding for the text parameter.
 
-    Remember: this is JSON, which means that all strings in parameter text must be properly escaped, 
-    such as for newlines, etc. !!
+    Example:
+
+    { "write": { "fname": "/path/to/file1.txt",
+                 "text": START_RAW
+    This is the text to write to the file.
+    Line 2.
+    END_RAW
+               }
+    }
+
+    Obviously you should not start a new command list if you are already in one.
 
     """
     dirname = check_path(fname)
@@ -222,3 +238,56 @@ ignore ="""
         print(f'Directory {new_dir} does not exist.')
     return True
 """
+
+@command()
+async def read_numbered(fname, context=None):
+    """Read a file and return its contents as a numbered string.
+
+    Parameters:
+    fname (str): The absolute path to the file to be read.
+
+    Returns:
+    str: A string containing the file contents with line numbers.
+
+    Example:
+    { "read_numbered": { "fname": "/path/to/file.txt" } }
+    """
+    result = numbered_file_to_string(fname)
+    print(f'Read numbered content from {fname}')
+    return result
+
+@command()
+async def replace_lines(fname, start, end, new_text, context=None):
+    """Replace text in a file from the start line number to the end line number with new text.
+
+    Parameters:
+    fname (str): The absolute path to the file to be modified.
+    start (int): The starting line number (1-indexed).
+    end (int): The ending line number (1-indexed).
+    new_text (RAW str): The text to insert, replacing the original text. This does not need to match the original line count.
+                        To delete text, use a blank line here.
+                    
+    Returns:
+
+    bool: True if successful, False otherwise.
+
+    Example:
+    { "replace_lines": { 
+        "fname": "/path/to/file.txt",
+        "start": 3,
+        "end": 5,
+        "new_text": START_RAW 
+    This is a new line
+    And another one
+    Third line
+    END_RAW
+    } }
+
+    """
+    result = replace_lines_impl(fname, start, end, new_text)
+    if result:
+        print(f'Successfully replaced lines {start} to {end} in {fname}')
+    else:
+        print(f'Failed to replace lines in {fname}')
+    return result
+
