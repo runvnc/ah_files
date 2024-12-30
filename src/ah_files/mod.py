@@ -166,17 +166,17 @@ async def replace_inclusive(fname, starts_with, ends_with, text, context=None):
     return True
 
 @command()
-async def dir(dir='', context=None):
+async def dir(full_path, context=None):
     """List files in directory.
-    Parameter: dir - The full path to the directory to list files in.
+    Parameter: full_path - The full path to the directory to list files in.
 
     Example:
     
-    { "dir": "/path/to/subdir1" }
+    { "dir": { "full_path": "/path/to/subdir1" } }
 
     """
-    files = os.listdir(dir)
-    print(f'Files in {dir}: {files}')
+    files = os.listdir(full_path)
+    print(f'Files in {full_path}: {files}')
     return files
 
 @command()
