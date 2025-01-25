@@ -54,7 +54,8 @@ async def write(fname, text, context=None):
 
     fname MUST be the absolute path to the file.
 
-    Use the RAW string block encoding for the text parameter.
+    Important: use the RAW string block encoding for the text parameter,
+            especially if you have special characters or newlines.
 
     Example:
 
