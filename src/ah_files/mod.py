@@ -48,7 +48,7 @@ async def write(fname, text, context=None):
     """Write text to a file. Will overwrite the file if it exists.
     Make sure you know the full path first.
     Note: All text must be provided to be written to the file. Do NOT include placeholders,
-    as the text will be written exactly as provided.
+    as the text will be written exactly as provided and will ovewrite any existing content.
 
     For large amounts of text, use append() with multiple commands.
 
@@ -82,7 +82,7 @@ async def write(fname, text, context=None):
         f.write(text)
     
     print(f'Wrote text to {fname}')
-    return True
+    return f"[SYSTEM command result, NOT user reply: Wrote {fname}]"
 
 @command()
 async def read(fname, context=None):
