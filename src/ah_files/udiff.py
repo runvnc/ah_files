@@ -30,7 +30,9 @@ def apply_hunk(content, hunk):
         return content
         
     print("DEBUG: Starting apply_hunk")
-    print("DEBUG: Received hunk:", hunk)
+    print("DEBUG: Received hunk lines:")
+    for line in hunk:
+        print(f"DEBUG: HUNK LINE: {repr(line)}")
         
     # Normalize line endings in content
     content = normalize_line_endings(content)
@@ -63,14 +65,16 @@ def apply_hunk(content, hunk):
     for line in hunk[header_line + 1:]:
         if line.startswith(" ") or line.startswith("-"):
             # Normalize line endings in the hunk lines
-            before_lines.append(normalize_line_endings(line[1:]))
+            normalized = normalize_line_endings(line[1:])
+            before_lines.append(normalized)
+            print(f"DEBUG: Added before line: {repr(normalized)}")
             
     # Find the location in the original content
     before_text = "".join(before_lines)
     content_text = "".join(lines)
     
     print("DEBUG: Before text:", repr(before_text))
-    print("DEBUG: Content excerpt:", repr(content_text[:200]))
+    print("DEBUG: Content text:", repr(content_text))
     
     # Find where this chunk should go
     chunk_pos = content_text.find(before_text)
@@ -85,7 +89,9 @@ def apply_hunk(content, hunk):
     for line in hunk[header_line + 1:]:
         if line.startswith(" ") or line.startswith("+"):
             # Normalize line endings in the hunk lines
-            after_lines.append(normalize_line_endings(line[1:]))
+            normalized = normalize_line_endings(line[1:])
+            after_lines.append(normalized)
+            print(f"DEBUG: Added after line: {repr(normalized)}")
             
     after_text = "".join(after_lines)
     print("DEBUG: After text:", repr(after_text))
@@ -115,6 +121,7 @@ class UnifiedDiffCoder:
             print("DEBUG: Processing line:", repr(line))
             if line.startswith("--- "):
                 if current_hunk:
+                    print("DEBUG: Adding hunk for path", current_path)
                     edits.append((current_path, current_hunk))
                     current_hunk = []
                 current_path = line[4:].strip()
@@ -124,23 +131,35 @@ class UnifiedDiffCoder:
                 print("DEBUG: Found target file:", current_path)
             elif line.startswith("@@"):
                 if current_hunk:
+                    print("DEBUG: Adding hunk for path", current_path)
                     edits.append((current_path, current_hunk))
                 current_hunk = [line]
-                print("DEBUG: Started new hunk with header:", line.strip())
+                print("DEBUG: Started new hunk with header:", repr(line))
             elif line.startswith(("-", "+", " ")) and current_hunk:
                 current_hunk.append(line)
                 print("DEBUG: Added line to hunk:", repr(line))
                 
         if current_hunk:
+            print("DEBUG: Adding final hunk for path", current_path)
             edits.append((current_path, current_hunk))
             
-        print("DEBUG: Final edits list:", edits)
+        print("DEBUG: Final edits list:")
+        for path, hunk in edits:
+            print(f"DEBUG: Path: {repr(path)}")
+            print("DEBUG: Hunk lines:")
+            for line in hunk:
+                print(f"DEBUG: {repr(line)}")
         return edits
 
     def apply_edits(self, edits):
         """Apply all edits to their respective files"""
         print("\nDEBUG: Starting apply_edits")
-        print("DEBUG: Received edits:", edits)
+        print("DEBUG: Received edits:")
+        for path, hunk in edits:
+            print(f"DEBUG: Edit for path: {repr(path)}")
+            print("DEBUG: Hunk lines:")
+            for line in hunk:
+                print(f"DEBUG: {repr(line)}")
         
         cnt = 0
         for path, hunk in edits:
@@ -150,7 +169,7 @@ class UnifiedDiffCoder:
             full_path = self.io.abs_path(path)
             print(f"DEBUG: Processing file: {full_path}")
             content = self.io.read_text(full_path)
-            print("DEBUG: File content:", repr(content[:200]))
+            print("DEBUG: File content:", repr(content))
             
             new_content = apply_hunk(content, hunk)
             if new_content != content:
