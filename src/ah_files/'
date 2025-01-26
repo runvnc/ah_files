@@ -80,24 +80,16 @@ async def overwrite(fname, text, context=None):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
 
-    old_line_count = 0
     if os.path.isfile(fname):
-        # read the file in and count the number of lines
-        with open(fname, 'r') as f:
-            old_text = f.read()
-            old_line_count = old_text.count('\n') + 1
-            print(f"Read {fname} with {old_line_count} lines")
         backup_file(fname)
     
     with open(fname, 'w') as f:
         f.write(text)
     
+    # count the number of lines in the (new?) file
     line_count = text.count('\n') + 1
-    print(f"Wrote text to {fname} line count: {line_count}")
-    if old_line_count > 0:
-        return f"[SYSTEM command result, NOT user reply: Wrote {fname}. File now contains {line_count} lines, previously {old_line_count} lines.]"
-    else:
-        return f"[SYSTEM command result, NOT user reply: Wrote {fname}. File now contains a total of {line_count} lines.]"
+    print(f"Wrote text to {fname} line count: {line_count)")
+    return f"[SYSTEM command result, NOT user reply: Wrote {fname}. File now contains a total of {line_count} lines.]"
 
 @command()
 async def read(fname, context=None):
