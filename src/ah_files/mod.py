@@ -43,7 +43,7 @@ async def append(fname, text, context=None):
     print(f'Appended text to {fname}')
     return True
 
-@command
+@command()
 async def write(fname, text, context=None):
     """This is an alias for the overwrite() command."""
     return await overwrite(fname, text, context)
