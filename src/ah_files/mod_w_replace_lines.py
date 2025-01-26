@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import shutil
 from .numbered import numbered_file_to_string, replace_lines_impl
-from .udiff import UnifiedDiffCoder, FileIO
+
 
 def check_path(fname):
     dirname = os.path.dirname(fname)
@@ -230,107 +230,80 @@ async def show_backups(context=None):
     print(f"Backup files: {backup_files}")
     return backup_files
 
-@command()
-async def apply_udiff(abs_root_path, udiff, context=None):
-    """
-Apply a unified diff to one or more files in a project.
+ignore ="""
+#@command()
+#async def cd(dir, context=None):
+#    Change the current working directory.
 
-Parameters:
-    abs_root_path - The absolute path to the root directory of the project.
-                    Files in the diff will be relative to this path.
+    #    Parameter: directory - The directory to change to. This can be a relative or absolute path.
+                           If unsure, use absolute path.
 
-    udiff         - The unified diff to apply to the file(s).
+    #    Example:
 
-Write out the changes similar to a unified diff like `diff -U0` would produce.
-Use the RAW mode (START_RAW and END_RAW) and don't JSON escape the udiff parameter.
+    { "cd": "subdir1" }
 
-Return edits similar to unified diffs that `diff -U0` would produce.
+    Other Example (parent dir)
 
-Make sure you include the first 2 lines with the file paths.
-Don't include timestamps with the file paths.
+    { "cd": ".." }
 
-Start each hunk of changes with a `@@ ... @@` line.
-Don't include line numbers like `diff -U0` does.
-The user's patch tool doesn't need them.
-
-The user's patch tool needs CORRECT patches that apply cleanly against the current contents of the file!
-Think carefully and make sure you include and mark all lines that need to be removed or changed as `-` lines.
-Make sure you mark all new or modified lines with `+`.
-Don't leave out any lines or the diff patch won't apply correctly.
-
-Indentation matters in the diffs!
-
-Start a new hunk for each section of the file that needs changes.
-
-Only output hunks that specify changes with `+` or `-` lines.
-Skip any hunks that are entirely unchanging ` ` lines.
-
-Output hunks in whatever order makes the most sense.
-Hunks don't need to be in any particular order.
-
-When editing a function, method, loop, etc use a hunk to replace the *entire* code block.
-Delete the entire existing version with `-` lines and then add a new, updated version with `+` lines.
-This will help you generate correct code and correct diffs.
-
-To move code within a file, use 2 hunks: 1 to delete it from its current location, 1 to insert it in the new location.
-
-To make a new file, show a diff from `--- /dev/null` to `+++ path/to/new/file.ext`.
-
-Example:
-
-(User request: 'Replace is_prime with a call to sympy.')
-
-{ "apply_udiff": { "abs_root_path": "/path/to/app.py",
-                   "udiff": START_RAW
---- mathweb/flask/app.py
-+++ mathweb/flask/app.py
-@@ ... @@
--class MathWeb:
-+import sympy
-+
-+class MathWeb:
-@@ ... @@
--def is_prime(x):
--    if x < 2:
--        return False
--    for i in range(2, int(math.sqrt(x)) + 1):
--        if x % i == 0:
--            return False
--    return True
-@@ ... @@
--@app.route('/prime/<int:n>')
--def nth_prime(n):
--    count = 0
--    num = 1
--    while count < n:
--        num += 1
--        if is_prime(num):
--            count += 1
--    return str(num)
-+@app.route('/prime/<int:n>')
-+def nth_prime(n):
-+    count = 0
-+    num = 1
-+    while count < n:
-+        num += 1
-+        if sympy.isprime(num):
-+            count += 1
-+    return str(num)
-
-END_RAW
-
-    }
-}
-
-
+    new_dir = os.path.abspath(dir)
+    if os.path.isdir(new_dir):
+        context.data['current_directory'] = new_dir
+        print(f'Changed current directory to {new_dir}')
+    else:
+        print(f'Directory {new_dir} does not exist.')
+    return True
 """
-    dir = os.path.dirname(abs_root_path)
-    io = FileIO(dir)
-    coder = UnifiedDiffCoder(io)
- 
-    edits = coder.get_edits(udiff)
-    num_edits = coder.apply_edits(edits)
-    print(f"Applied {num_edits} edits")
-    print("Updated content:")
-    return f"[SYSTEM command result, NOT user reply: Applied {num_edits} edits to {full_path}. You may wish to read() the file to verify the diff(s) were applied as expected.]"
- 
+
+@command()
+async def read_numbered(fname, context=None):
+    """Read a file and return its contents as a numbered string.
+
+    Parameters:
+    fname (str): The absolute path to the file to be read.
+
+    Returns:
+    str: A string containing the file contents with line numbers.
+
+    Example:
+    { "read_numbered": { "fname": "/path/to/file.txt" } }
+    """
+    result = numbered_file_to_string(fname)
+    print(f'Read numbered content from {fname}')
+    return result
+
+@command()
+async def replace_lines(fname, start, end, new_text, context=None):
+    """Replace text in a file from the start line number to the end line number with new text.
+
+    Parameters:
+    fname (str): The absolute path to the file to be modified.
+    start (int): The starting line number (1-indexed).
+    end (int): The ending line number (1-indexed).
+    new_text (RAW str): The text to insert, replacing the original text. This does not need to match the original line count.
+                        To delete text, use a blank line here.
+                    
+    Returns:
+
+    bool: True if successful, False otherwise.
+
+    Example:
+    { "replace_lines": { 
+        "fname": "/path/to/file.txt",
+        "start": 3,
+        "end": 5,
+        "new_text": START_RAW 
+    This is a new line
+    And another one
+    Third line
+    END_RAW
+    } }
+
+    """
+    result = replace_lines_impl(fname, start, end, new_text)
+    if result:
+        print(f'Successfully replaced lines {start} to {end} in {fname}')
+    else:
+        print(f'Failed to replace lines in {fname}')
+    return result
+
