@@ -25,6 +25,9 @@ def apply_hunk(content, hunk):
     if not hunk:
         return content
         
+    print("DEBUG: Starting apply_hunk")
+    print("DEBUG: Received hunk:", hunk)
+        
     # Split content into lines for processing
     lines = content.splitlines(True)  # Keep line endings
     
@@ -36,14 +39,17 @@ def apply_hunk(content, hunk):
             break
             
     if header_line is None:
+        print("DEBUG: No header line found")
         return content
         
     # Parse the hunk header
     header_info = parse_hunk_header(hunk[header_line])
     if not header_info:
+        print("DEBUG: Could not parse header")
         return content
         
     old_start, old_length, new_start, new_length = header_info
+    print(f"DEBUG: Header info: old_start={old_start}, old_length={old_length}, new_start={new_start}, new_length={new_length}")
     
     # Extract the before content from the hunk
     before_lines = []
@@ -55,17 +61,15 @@ def apply_hunk(content, hunk):
     before_text = "".join(before_lines)
     content_text = "".join(lines)
     
-    # Debug output
-    print("\nDEBUG - Before text (hex):", before_text.encode('utf-8').hex())
-    print("DEBUG - Content excerpt (hex):", content_text[0:100].encode('utf-8').hex())
-    print("\nDEBUG - Before text (repr):", repr(before_text))
-    print("DEBUG - Content excerpt (repr):", repr(content_text[0:100]))
+    print("DEBUG: Before text:", repr(before_text))
+    print("DEBUG: Content excerpt:", repr(content_text[:200]))
     
     # Find where this chunk should go
     chunk_pos = content_text.find(before_text)
-    print("\nDEBUG - Chunk position:", chunk_pos)
+    print("DEBUG: Chunk position:", chunk_pos)
     
     if chunk_pos == -1:
+        print("DEBUG: Could not find chunk in content")
         return content  # Can't find the chunk, return unchanged
         
     # Now extract the after content
@@ -75,6 +79,7 @@ def apply_hunk(content, hunk):
             after_lines.append(line[1:])
             
     after_text = "".join(after_lines)
+    print("DEBUG: After text:", repr(after_text))
     
     # Create the new content by replacing just this chunk
     new_content = content_text[:chunk_pos] + after_text + content_text[chunk_pos + len(before_text):]
@@ -86,45 +91,62 @@ class UnifiedDiffCoder:
 
     def get_edits(self, diff_content):
         """Parse the unified diff into a list of (path, hunk) tuples"""
+        print("\nDEBUG: Starting get_edits")
+        print("DEBUG: Received diff content:", repr(diff_content))
+        
         edits = []
         current_path = None
         current_hunk = []
         
         lines = diff_content.splitlines(keepends=True)
         for line in lines:
+            print("DEBUG: Processing line:", repr(line))
             if line.startswith("--- "):
                 if current_hunk:
                     edits.append((current_path, current_hunk))
                     current_hunk = []
                 current_path = line[4:].strip()
+                print("DEBUG: Found source file:", current_path)
             elif line.startswith("+++ "):
                 current_path = line[4:].strip()
+                print("DEBUG: Found target file:", current_path)
             elif line.startswith("@@"):
                 if current_hunk:
                     edits.append((current_path, current_hunk))
                 current_hunk = [line]
+                print("DEBUG: Started new hunk with header:", line.strip())
             elif line.startswith(("-", "+", " ")) and current_hunk:
                 current_hunk.append(line)
+                print("DEBUG: Added line to hunk:", repr(line))
                 
         if current_hunk:
             edits.append((current_path, current_hunk))
             
+        print("DEBUG: Final edits list:", edits)
         return edits
 
     def apply_edits(self, edits):
         """Apply all edits to their respective files"""
+        print("\nDEBUG: Starting apply_edits")
+        print("DEBUG: Received edits:", edits)
+        
         cnt = 0
         for path, hunk in edits:
             if not path or path == "/dev/null":
                 continue
                 
             full_path = self.io.abs_path(path)
+            print(f"DEBUG: Processing file: {full_path}")
             content = self.io.read_text(full_path)
+            print("DEBUG: File content:", repr(content[:200]))
             
             new_content = apply_hunk(content, hunk)
             if new_content != content:
                 cnt += 1
                 self.io.write_text(full_path, new_content)
+                print("DEBUG: File was modified")
+            else:
+                print("DEBUG: No changes made to file")
                 
         return cnt
 
