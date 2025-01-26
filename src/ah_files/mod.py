@@ -328,8 +328,7 @@ END_RAW
 
 
 """
-    dir = os.path.dirname(abs_root_path)
-    io = FileIO(dir)
+    io = FileIO(abs_root_path)
     coder = UnifiedDiffCoder(io)
  
     edits = coder.get_edits(udiff)
