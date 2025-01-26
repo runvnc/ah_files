@@ -268,9 +268,13 @@ Skip any hunks that are entirely unchanging ` ` lines.
 Output hunks in whatever order makes the most sense.
 Hunks don't need to be in any particular order.
 
+Be sure to include context lines to avod fragile diffs.
+
 When editing a function, method, loop, etc use a hunk to replace the *entire* code block.
 Delete the entire existing version with `-` lines and then add a new, updated version with `+` lines.
 This will help you generate correct code and correct diffs.
+
+
 
 To move code within a file, use 2 hunks: 1 to delete it from its current location, 1 to insert it in the new location.
 
