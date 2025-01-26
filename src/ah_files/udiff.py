@@ -1,6 +1,10 @@
 import difflib
 from pathlib import Path
 
+def normalize_line_endings(text):
+    """Convert all line endings to \n"""
+    return text.replace('\r\n', '\n').replace('\r', '\n')
+
 def parse_hunk_header(header):
     """Parse @@ -start,length +start,length @@ header"""
     parts = header.split()
@@ -28,6 +32,9 @@ def apply_hunk(content, hunk):
     print("DEBUG: Starting apply_hunk")
     print("DEBUG: Received hunk:", hunk)
         
+    # Normalize line endings in content
+    content = normalize_line_endings(content)
+    
     # Split content into lines for processing
     lines = content.splitlines(True)  # Keep line endings
     
@@ -55,7 +62,8 @@ def apply_hunk(content, hunk):
     before_lines = []
     for line in hunk[header_line + 1:]:
         if line.startswith(" ") or line.startswith("-"):
-            before_lines.append(line[1:])
+            # Normalize line endings in the hunk lines
+            before_lines.append(normalize_line_endings(line[1:]))
             
     # Find the location in the original content
     before_text = "".join(before_lines)
@@ -76,7 +84,8 @@ def apply_hunk(content, hunk):
     after_lines = []
     for line in hunk[header_line + 1:]:
         if line.startswith(" ") or line.startswith("+"):
-            after_lines.append(line[1:])
+            # Normalize line endings in the hunk lines
+            after_lines.append(normalize_line_endings(line[1:]))
             
     after_text = "".join(after_lines)
     print("DEBUG: After text:", repr(after_text))
@@ -97,6 +106,9 @@ class UnifiedDiffCoder:
         edits = []
         current_path = None
         current_hunk = []
+        
+        # Normalize line endings in the diff content
+        diff_content = normalize_line_endings(diff_content)
         
         lines = diff_content.splitlines(keepends=True)
         for line in lines:
