@@ -55,8 +55,16 @@ def apply_hunk(content, hunk):
     before_text = "".join(before_lines)
     content_text = "".join(lines)
     
+    # Debug output
+    print("\nDEBUG - Before text (hex):", before_text.encode('utf-8').hex())
+    print("DEBUG - Content excerpt (hex):", content_text[0:100].encode('utf-8').hex())
+    print("\nDEBUG - Before text (repr):", repr(before_text))
+    print("DEBUG - Content excerpt (repr):", repr(content_text[0:100]))
+    
     # Find where this chunk should go
     chunk_pos = content_text.find(before_text)
+    print("\nDEBUG - Chunk position:", chunk_pos)
+    
     if chunk_pos == -1:
         return content  # Can't find the chunk, return unchanged
         
@@ -155,33 +163,3 @@ class FileIO:
         path = self.abs_path(path)
         with open(path, "w") as f:
             f.write(content)
-
-if __name__ == "__main__":
-    # Example usage
-    io = FileIO("/tmp/udiff-example")
-    coder = UnifiedDiffCoder(io)
-    
-    # Create initial file
-    io.write_text("example.py", '''def subtract(a, b):
-    return a - b
-''')
-    
-    # Unified diff to apply
-    diff = '''--- example.py
-+++ example.py
-@@ -1,2 +1,9 @@
-def subtract(a, b):
-+    """Subtracts b from a"""
--    return a - b
-+    return (a - b)     
-+
-+def multiply(a, b):
-+    """Multiplies two numbers"""
-+    return a * b
-'''
-    
-    edits = coder.get_edits(diff)
-    num_edits = coder.apply_edits(edits)
-    print(f"Applied {num_edits} edits")
-    print("Updated content:")
-    print(io.read_text("example.py"))
