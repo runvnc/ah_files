@@ -1,5 +1,6 @@
 import difflib
 from pathlib import Path
+import os
 
 def normalize_line_endings(text):
     """Convert all line endings to \n"""
@@ -166,6 +167,10 @@ class UnifiedDiffCoder:
             if not path or path == "/dev/null":
                 continue
                 
+            # Handle relative paths
+            if not os.path.isabs(path):
+                path = os.path.basename(path)
+            
             full_path = self.io.abs_path(path)
             print(f"DEBUG: Processing file: {full_path}")
             content = self.io.read_text(full_path)
