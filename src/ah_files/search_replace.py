@@ -12,7 +12,6 @@ from diff_match_patch import diff_match_patch
 from tqdm import tqdm
 
 
-
 class RelativeIndenter:
     """Rewrites text files to have relative indentation, which involves
     reformatting the leading white space on lines.  This format makes
@@ -483,7 +482,7 @@ always_relative_indent = [
 
 editblock_strategies = [
     (search_and_replace, all_preprocs),
-    (git_cherry_pick_osr_onto_o, all_preprocs),
+    (all_preprocs),
     (dmp_lines_apply, all_preprocs),
 ]
 
@@ -494,7 +493,7 @@ never_relative = [
 
 udiff_strategies = [
     (search_and_replace, all_preprocs),
-    (git_cherry_pick_osr_onto_o, all_preprocs),
+    (all_preprocs),
     (dmp_lines_apply, all_preprocs),
 ]
 
