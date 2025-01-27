@@ -7,5 +7,5 @@ name = "ah_shell"
 version = "1.0.0"
 description = "Execute shell commands and dir tree"
 requires-python = ">=3.7"
-dependencies = ["diff-match-patch, tqdm"]
+dependencies = ["diff-match-patch","tqdm"]
 
