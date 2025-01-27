@@ -332,8 +332,9 @@ END_RAW
     coder = UnifiedDiffCoder(io)
  
     edits = coder.get_edits(udiff)
+    print("Num edits found:", len(edits))
     num_edits = coder.apply_edits(edits)
     print(f"Applied {num_edits} edits")
     print("Updated content:")
-    return f"[SYSTEM command result, NOT user reply: Applied {num_edits} edits. You may wish to read() the file(s) to verify the diff was applied as expected.]"
+    return f"[SYSTEM command result, NOT user reply: Found edits: {str(edits)}.  Applied {num_edits} edits. You may wish to read() the file(s) to verify the diff was applied as expected.]"
  
