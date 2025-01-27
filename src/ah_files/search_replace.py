@@ -11,8 +11,6 @@ except ImportError:
 from diff_match_patch import diff_match_patch
 from tqdm import tqdm
 
-from aider.dump import dump
-from aider.utils import GitTemporaryDirectory
 
 
 class RelativeIndenter:
@@ -206,8 +204,8 @@ def map_patches(texts, patches, debug):
         html = dmp.diff_prettyHtml(diff_s_o)
         Path("tmp.html").write_text(html)
 
-        dump(len(search_text))
-        dump(len(original_text))
+        #dump(len(search_text))
+        #dump(len(original_text))
 
     for patch in patches:
         start1 = patch.start1
@@ -458,81 +456,6 @@ def search_and_replace(texts):
 
     return new_text
 
-
-def git_cherry_pick_osr_onto_o(texts):
-    search_text, replace_text, original_text = texts
-
-    with GitTemporaryDirectory() as dname:
-        repo = git.Repo(dname)
-
-        fname = Path(dname) / "file.txt"
-
-        # Make O->S->R
-        fname.write_text(original_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "original")
-        original_hash = repo.head.commit.hexsha
-
-        fname.write_text(search_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "search")
-
-        fname.write_text(replace_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "replace")
-        replace_hash = repo.head.commit.hexsha
-
-        # go back to O
-        repo.git.checkout(original_hash)
-
-        # cherry pick R onto original
-        try:
-            repo.git.cherry_pick(replace_hash, "--minimal")
-        except (git.exc.ODBError, git.exc.GitError):
-            # merge conflicts!
-            return
-
-        new_text = fname.read_text()
-        return new_text
-
-
-def git_cherry_pick_sr_onto_so(texts):
-    search_text, replace_text, original_text = texts
-
-    with GitTemporaryDirectory() as dname:
-        repo = git.Repo(dname)
-
-        fname = Path(dname) / "file.txt"
-
-        fname.write_text(search_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "search")
-        search_hash = repo.head.commit.hexsha
-
-        # make search->replace
-        fname.write_text(replace_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "replace")
-        replace_hash = repo.head.commit.hexsha
-
-        # go back to search,
-        repo.git.checkout(search_hash)
-
-        # make search->original
-        fname.write_text(original_text)
-        repo.git.add(str(fname))
-        repo.git.commit("-m", "original")
-
-        # cherry pick replace onto original
-        try:
-            repo.git.cherry_pick(replace_hash, "--minimal")
-        except (git.exc.ODBError, git.exc.GitError):
-            # merge conflicts!
-            return
-
-        new_text = fname.read_text()
-
-        return new_text
 
 
 class SearchTextNotUnique(ValueError):
