@@ -230,7 +230,7 @@ async def show_backups(context=None):
     print(f"Backup files: {backup_files}")
     return backup_files
 
-
+@command()
 async def apply_udiff(abs_root_path, udiff, context=None):
     """
 Apply a unified diff to one or more files in a project.
