@@ -230,7 +230,7 @@ async def show_backups(context=None):
     print(f"Backup files: {backup_files}")
     return backup_files
 
-@command()
+
 async def apply_udiff(abs_root_path, udiff, context=None):
     """
 Apply a unified diff to one or more files in a project.
@@ -240,94 +240,46 @@ Parameters:
                     Files in the diff will be relative to this path.
 
     udiff         - The unified diff to apply to the file(s).
+                    Use RAW mode with START_RAW and END_RAW for the diff content.
 
-Write out the changes similar to a unified diff like `diff -U0` would produce.
-Use the RAW mode (START_RAW and END_RAW) and don't JSON escape the udiff parameter.
+Best Practices:
+    1. Make one logical change at a time - don't combine multiple conceptual changes
+       in a single diff. Each diff should represent one coherent modification.
 
-Return edits similar to unified diffs that `diff -U0` would produce.
+    2. Include sufficient unique context around changes - use function/class boundaries
+       or other distinctive sections to ensure correct placement.
 
-Make sure you include the first 2 lines with the file paths.
-Don't include timestamps with the file paths.
+    3. When modifying a file multiple times, verify each change before proceeding
+       to the next change. Don't try to make multiple changes in one diff.
 
-Start each hunk of changes with a `@@ ... @@` line.
-Don't include line numbers like `diff -U0` does.
-The user's patch tool doesn't need them.
+    4. Ensure proper marking of removed (-) and added (+) lines, and include
+       enough unchanged context lines (starting with space) around the changes.
 
-The user's patch tool needs CORRECT patches that apply cleanly against the current contents of the file!
-Think carefully and make sure you include and mark all lines that need to be removed or changed as `-` lines.
-Make sure you mark all new or modified lines with `+`.
-Don't leave out any lines or the diff patch won't apply correctly.
+    5. When editing a function or class, replace the entire block to maintain
+       consistency - remove the old version with (-) lines then add the new
+       version with (+) lines.
 
-Indentation matters in the diffs!
-
-Start a new hunk for each section of the file that needs changes.
-
-Only output hunks that specify changes with `+` or `-` lines.
-Skip any hunks that are entirely unchanging ` ` lines.
-
-Output hunks in whatever order makes the most sense.
-Hunks don't need to be in any particular order.
-
-Be sure to include context lines to avod fragile diffs.
-
-When editing a function, method, loop, etc use a hunk to replace the *entire* code block.
-Delete the entire existing version with `-` lines and then add a new, updated version with `+` lines.
-This will help you generate correct code and correct diffs.
-
-
-
-To move code within a file, use 2 hunks: 1 to delete it from its current location, 1 to insert it in the new location.
-
-To make a new file, show a diff from `--- /dev/null` to `+++ path/to/new/file.ext`.
+Technical Notes:
+    - Include the first 2 lines with file paths (--- and +++ lines)
+    - Start each change section with @@ ... @@ line
+    - Use /dev/null as source path for new files
+    - Indentation must match exactly
+    - To move code, use separate remove and add hunks
 
 Example:
 
-(User request: 'Replace is_prime with a call to sympy.')
-
-{ "apply_udiff": { "abs_root_path": "/path/to/app.py",
-                   "udiff": START_RAW
---- mathweb/flask/app.py
-+++ mathweb/flask/app.py
-@@ ... @@
--class MathWeb:
-+import sympy
-+
-+class MathWeb:
-@@ ... @@
--def is_prime(x):
--    if x < 2:
--        return False
--    for i in range(2, int(math.sqrt(x)) + 1):
--        if x % i == 0:
--            return False
--    return True
-@@ ... @@
--@app.route('/prime/<int:n>')
--def nth_prime(n):
--    count = 0
--    num = 1
--    while count < n:
--        num += 1
--        if is_prime(num):
--            count += 1
--    return str(num)
-+@app.route('/prime/<int:n>')
-+def nth_prime(n):
-+    count = 0
-+    num = 1
-+    while count < n:
-+        num += 1
-+        if sympy.isprime(num):
-+            count += 1
-+    return str(num)
-
-END_RAW
-
-    }
-}
-
-
-"""
+    { "apply_udiff": { "abs_root_path": "/path/to/project",
+                      "udiff": START_RAW
+    --- example.py
+    +++ example.py
+    @@ -1,3 +1,3 @@
+    -def old_function():
+    -    return 'old'
+    +def new_function():
+    +    return 'new'
+    END_RAW
+    }}
+    """
     io = FileIO(abs_root_path)
     coder = UnifiedDiffCoder(io)
  
@@ -337,4 +289,3 @@ END_RAW
     print(f"Applied {num_edits} edits")
     print("Updated content:")
     return f"[SYSTEM command result, NOT user reply: Found edits: {str(edits)}.  Applied {num_edits} edits. You may wish to read() the file(s) to verify the diff was applied as expected.]"
- 
