@@ -279,6 +279,13 @@ Example:
     +    return 'new'
     END_RAW
     }}
+
+# Reminder
+
+UNLESS YOU HAVE BEEN TOLD OTHERWISE IN THESE SYSTEM INSTRUCTIONS AS AN EXCEPTION
+FOR YOUR SPECIFIC MODEL, USE THE RAW MODE!
+Use the START_RAW and END_RAW as shown!! This way you won't have to deal with JSON escaping.
+
     """
     io = FileIO(abs_root_path)
     coder = UnifiedDiffCoder(io)
