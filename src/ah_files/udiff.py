@@ -211,9 +211,8 @@ class UnifiedDiffCoder:
             if not path or path == "/dev/null":
                 continue
                 
-            # Handle relative paths
-            if not Path(path).is_absolute():
-                path = Path(path).name
+            # FileIO.abs_path already handles both absolute and relative paths correctly
+            # by joining relative paths with the root directory
             
             full_path = self.io.abs_path(path)
             content = self.io.read_text(full_path)
