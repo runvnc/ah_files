@@ -90,6 +90,7 @@ async def overwrite(fname, content, context=None):
     In normal JSON mode, text content MUST be properly escaped (e.g. for newlines or double quotes)
 
     """
+    text = content
     dirname = check_path(fname)
 
     if not os.path.exists(dirname):
