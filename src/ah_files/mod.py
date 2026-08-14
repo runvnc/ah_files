@@ -44,12 +44,12 @@ async def append(fname, text, context=None):
     return True
 
 @command()
-async def write(fname, text, context=None):
+async def write(fname, content, context=None):
     """This is an alias for the overwrite() command."""
     return await overwrite(fname, text, context)
 
 @command()
-async def overwrite(fname, text, context=None):
+async def overwrite(fname, content, context=None):
     """Write text to a file. Will overwrite the file if it exists.
     Make sure you know the full path first.
     Note: All text must be provided to be written to the file. Do NOT include placeholders,
@@ -59,8 +59,10 @@ async def overwrite(fname, text, context=None):
 
     fname MUST be the absolute path to the file.
 
-    Important: use the RAW string block encoding for the text parameter,
+
+    Important: you might use the RAW string block encoding for the text parameter,
             especially if you have special characters or newlines.
+  
 
     Example:
 
@@ -73,6 +75,19 @@ async def overwrite(fname, text, context=None):
     }
 
     Obviously you should not start a new command list if you are already in one.
+
+
+  "properties": {
+    "fname": {
+      "type": "string",
+      "description": "Path to write, resolved by the filesystem backend."
+    },
+    "content": {
+      "type": "string",
+      "description": "Full UTF-8 text content to write."
+    }
+
+    In normal JSON mode, text content MUST be properly escaped (e.g. for newlines or double quotes)
 
     """
     dirname = check_path(fname)
