@@ -15,7 +15,7 @@ def check_path(fname):
     return dirname
 
 @command()
-async def append(fname, text, context=None):
+async def append(fname, content, context=None):
     """Append text to a file. If the file doesn't exist, it will be created.
 
        Don't try to output too much text at once.
@@ -27,12 +27,13 @@ async def append(fname, text, context=None):
     Example:
 
     { "append": { "fname": "/path/to/file1.txt",
-                 "text": START_RAW
+                 "content": START_RAW
     This is the text to be appended to the file.
     Line 2.
     END_RAW
     } }
     """
+    text = content
     dirname = os.path.dirname(fname)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
@@ -67,7 +68,7 @@ async def overwrite(fname, content, context=None):
     Example:
 
     { "overwrite": { "fname": "/path/to/file1.txt",
-                 "text": START_RAW
+                 "content": START_RAW
     This is the text to write to the file.
     Line 2.
     END_RAW
