@@ -15,7 +15,7 @@ def check_path(fname):
     return dirname
 
 @command()
-async def append(fname, content, context=None):
+async def append(fname, text, context=None):
     """Append text to a file. If the file doesn't exist, it will be created.
 
        Don't try to output too much text at once.
@@ -27,13 +27,12 @@ async def append(fname, content, context=None):
     Example:
 
     { "append": { "fname": "/path/to/file1.txt",
-                 "content": START_RAW
+                 "text": START_RAW
     This is the text to be appended to the file.
     Line 2.
     END_RAW
     } }
     """
-    text = content
     dirname = os.path.dirname(fname)
     if not os.path.exists(dirname):
         os.makedirs(dirname)
@@ -50,7 +49,7 @@ async def write(fname, content, context=None):
     return await overwrite(fname, text, context)
 
 @command()
-async def overwrite(fname, content, context=None):
+async def overwrite(fname, text, context=None):
     """Write text to a file. Will overwrite the file if it exists.
     Make sure you know the full path first.
     Note: All text must be provided to be written to the file. Do NOT include placeholders,
@@ -68,7 +67,7 @@ async def overwrite(fname, content, context=None):
     Example:
 
     { "overwrite": { "fname": "/path/to/file1.txt",
-                 "content": START_RAW
+                 "text": START_RAW
     This is the text to write to the file.
     Line 2.
     END_RAW
@@ -83,7 +82,7 @@ async def overwrite(fname, content, context=None):
       "type": "string",
       "description": "Path to write, resolved by the filesystem backend."
     },
-    "content": {
+    "text": {
       "type": "string",
       "description": "Full UTF-8 text content to write."
     }
@@ -91,7 +90,6 @@ async def overwrite(fname, content, context=None):
     In normal JSON mode, text content MUST be properly escaped (e.g. for newlines or double quotes)
 
     """
-    text = content
     dirname = check_path(fname)
 
     if not os.path.exists(dirname):
