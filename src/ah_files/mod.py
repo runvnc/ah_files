@@ -44,7 +44,7 @@ async def append(fname, text, context=None):
     return True
 
 @command()
-async def write(fname, content, context=None):
+async def write(fname, text, context=None):
     """This is an alias for the overwrite() command."""
     return await overwrite(fname, text, context)
 
